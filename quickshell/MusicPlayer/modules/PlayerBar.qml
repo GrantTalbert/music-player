@@ -40,6 +40,7 @@ Rectangle {
                 visible: !bar.track || !bar.track.art_url || bar.track.art_url.length === 0
                 text: "\u266B"
                 color: Theme.textMuted
+                font.family: Theme.fontFamily
                 font.pixelSize: 20
             }
         }
@@ -52,6 +53,7 @@ Rectangle {
                 width: parent.width
                 text: bar.track ? (bar.track.title || "") : "Nothing playing"
                 color: Theme.text
+                font.family: Theme.fontFamily
                 font.pixelSize: Theme.fontSizeNormal
                 font.bold: true
                 elide: Text.ElideRight
@@ -60,6 +62,7 @@ Rectangle {
                 width: parent.width
                 text: bar.track ? (bar.track.artist || "") : ""
                 color: Theme.textMuted
+                font.family: Theme.fontFamily
                 font.pixelSize: Theme.fontSizeSmall
                 elide: Text.ElideRight
             }
@@ -118,6 +121,7 @@ Rectangle {
                 Text {
                     text: Theme.formatTime(Backend.position)
                     color: Theme.textMuted
+                    font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSizeSmall
                     Layout.preferredWidth: 40
                     horizontalAlignment: Text.AlignRight
@@ -158,6 +162,7 @@ Rectangle {
                 Text {
                     text: Theme.formatTime(Backend.duration)
                     color: Theme.textMuted
+                    font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSizeSmall
                     Layout.preferredWidth: 40
                 }
@@ -171,6 +176,7 @@ Rectangle {
             Text {
                 text: "\u{1F50A}"
                 color: Theme.textMuted
+                font.family: Theme.fontFamily
                 font.pixelSize: Theme.fontSizeSmall
             }
             Slider {

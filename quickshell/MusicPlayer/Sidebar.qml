@@ -24,6 +24,7 @@ Rectangle {
         Text {
             text: Theme.appName
             color: Theme.text
+            font.family: Theme.fontFamily
             font.pixelSize: Theme.fontSizeLarge
             font.bold: true
             Layout.bottomMargin: 12
@@ -56,6 +57,7 @@ Rectangle {
             Text {
                 text: "PLAYLISTS"
                 color: Theme.textMuted
+                font.family: Theme.fontFamily
                 font.pixelSize: Theme.fontSizeSmall
                 font.bold: true
                 Layout.fillWidth: true
@@ -92,6 +94,7 @@ Rectangle {
             Text {
                 text: Backend.daemonConnected ? "Connected" : "Reconnecting..."
                 color: Theme.textMuted
+                font.family: Theme.fontFamily
                 font.pixelSize: Theme.fontSizeSmall
                 Layout.fillWidth: true
             }
@@ -114,12 +117,13 @@ Rectangle {
         ColumnLayout {
             width: parent.width
             spacing: 8
-            Text { text: "New playlist"; color: Theme.text; font.bold: true }
+            Text { text: "New playlist"; color: Theme.text; font.family: Theme.fontFamily; font.bold: true }
             TextField {
                 id: nameField
                 Layout.fillWidth: true
                 placeholderText: "Playlist name"
                 color: Theme.text
+                font.family: Theme.fontFamily
                 placeholderTextColor: Theme.textMuted
                 background: Rectangle { color: Theme.surfaceAlt; radius: 6 }
                 onAccepted: {

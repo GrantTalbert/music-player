@@ -33,6 +33,7 @@ Item {
         anchors.centerIn: parent
         text: btn.glyph
         color: btn.active ? Theme.accent : btn.color
+        font.family: Theme.fontFamily
         font.pixelSize: btn.fontSize
     }
 

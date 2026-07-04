@@ -71,12 +71,13 @@ Item {
         ColumnLayout {
             width: parent.width
             spacing: 8
-            Text { text: "Rename playlist"; color: Theme.text; font.bold: true }
+            Text { text: "Rename playlist"; color: Theme.text; font.family: Theme.fontFamily; font.bold: true }
             TextField {
                 id: renameField
                 Layout.fillWidth: true
                 text: root.playlistName
                 color: Theme.text
+                font.family: Theme.fontFamily
                 background: Rectangle { color: Theme.surfaceAlt; radius: 6 }
                 onAccepted: {
                     Backend.renamePlaylist(root.playlistName, renameField.text.trim())
@@ -108,6 +109,7 @@ Item {
             Text {
                 text: "Delete \u201C" + root.playlistName + "\u201D?"
                 color: Theme.text
+                font.family: Theme.fontFamily
                 font.bold: true
                 font.pixelSize: Theme.fontSizeNormal
                 wrapMode: Text.WordWrap
@@ -116,6 +118,7 @@ Item {
             Text {
                 text: "Are you sure you want to delete this playlist? This can't be undone."
                 color: Theme.textMuted
+                font.family: Theme.fontFamily
                 font.pixelSize: Theme.fontSizeSmall
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
@@ -131,14 +134,14 @@ Item {
                     width: 84; height: 32
                     radius: Theme.controlRadius
                     color: Theme.surfaceAlt
-                    Text { anchors.centerIn: parent; text: "Cancel"; color: Theme.text; font.pixelSize: Theme.fontSizeSmall }
+                    Text { anchors.centerIn: parent; text: "Cancel"; color: Theme.text; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSizeSmall }
                     TapHandler { onTapped: deleteConfirmPopup.close() }
                 }
                 Rectangle {
                     width: 84; height: 32
                     radius: Theme.controlRadius
                     color: Theme.danger
-                    Text { anchors.centerIn: parent; text: "Delete"; color: Theme.background; font.pixelSize: Theme.fontSizeSmall; font.bold: true }
+                    Text { anchors.centerIn: parent; text: "Delete"; color: Theme.background; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSizeSmall; font.bold: true }
                     TapHandler {
                         onTapped: {
                             deleteConfirmPopup.close()

@@ -45,6 +45,7 @@ Popup {
                     anchors.leftMargin: 8
                     text: modelData.name
                     color: Theme.text
+                    font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSizeNormal
                     elide: Text.ElideRight
                     width: parent.width - 16
@@ -71,6 +72,7 @@ Popup {
                 width: parent.width - 60
                 placeholderText: "New playlist..."
                 color: Theme.text
+                font.family: Theme.fontFamily
                 placeholderTextColor: Theme.textMuted
                 background: Rectangle { color: Theme.surfaceAlt; radius: 6 }
                 onAccepted: createBtn.doCreate()
@@ -91,6 +93,7 @@ Popup {
                     anchors.centerIn: parent
                     text: "Add"
                     color: Theme.background
+                    font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSizeSmall
                     font.bold: true
                 }

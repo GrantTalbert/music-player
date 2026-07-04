@@ -77,6 +77,7 @@ Rectangle {
                 visible: !row.song.art_url || row.song.art_url.length === 0
                 text: "\u266B"
                 color: Theme.textMuted
+                font.family: Theme.fontFamily
                 font.pixelSize: 16
             }
         }
@@ -88,6 +89,7 @@ Rectangle {
                 width: parent.width
                 text: (row.song.title || "") + (row.isMissing ? "  \u00B7 missing" : "")
                 color: row.isMissing ? Theme.textMuted : (row.isCurrent ? Theme.accent : Theme.text)
+                font.family: Theme.fontFamily
                 font.pixelSize: Theme.fontSizeNormal
                 font.bold: row.isCurrent && !row.isMissing
                 font.italic: row.isMissing
@@ -97,6 +99,7 @@ Rectangle {
                 width: parent.width
                 text: row.song.artist || ""
                 color: Theme.textMuted
+                font.family: Theme.fontFamily
                 font.pixelSize: Theme.fontSizeSmall
                 elide: Text.ElideRight
             }
@@ -105,6 +108,7 @@ Rectangle {
         Text {
             text: Theme.formatTime(row.song.duration || 0)
             color: Theme.textMuted
+            font.family: Theme.fontFamily
             font.pixelSize: Theme.fontSizeSmall
             Layout.preferredWidth: 50
             horizontalAlignment: Text.AlignRight

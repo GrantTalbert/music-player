@@ -44,6 +44,7 @@ Item {
             Text {
                 text: root.title
                 color: Theme.text
+                font.family: Theme.fontFamily
                 font.pixelSize: Theme.fontSizeLarge
                 font.bold: true
                 Layout.fillWidth: true
@@ -53,6 +54,7 @@ Item {
             Text {
                 text: root.songs.length + (root.songs.length === 1 ? " song" : " songs")
                 color: Theme.textMuted
+                font.family: Theme.fontFamily
                 font.pixelSize: Theme.fontSizeSmall
             }
 
@@ -77,6 +79,7 @@ Item {
                 anchors.rightMargin: 12
                 verticalAlignment: TextInput.AlignVCenter
                 color: Theme.text
+                font.family: Theme.fontFamily
                 font.pixelSize: Theme.fontSizeNormal
                 clip: true
                 onTextChanged: root._filter = text
@@ -100,6 +103,7 @@ Item {
             visible: root._filtered.length === 0
             text: root.emptyText
             color: Theme.textMuted
+            font.family: Theme.fontFamily
             font.pixelSize: Theme.fontSizeNormal
             Layout.topMargin: 24
             Layout.alignment: Qt.AlignHCenter
@@ -115,19 +119,20 @@ Item {
             ScrollBar.vertical: ScrollBar {}
 
             delegate: SongRow {
+                required property int index
                 width: ListView.view.width
-                song: modelData
-                isCurrent: Backend.currentTrack && Backend.currentTrack.id === modelData.id
+                song: root._filtered[index]
+                isCurrent: Backend.currentTrack && Backend.currentTrack.id === song.id
                 showRemove: root.showRemove
                 onClicked: {
                     // find this song's index within the *unfiltered* list so
                     // Next/Previous still walks the full, expected order
-                    const idx = root.songs.findIndex(s => s.id === modelData.id)
+                    const idx = root.songs.findIndex(s => s.id === song.id)
                     root.playRequested(idx >= 0 ? idx : 0, false)
                 }
-                onFavoriteClicked: Backend.toggleFavorite(modelData.id)
-                onAddToPlaylistClicked: addPopup.openFor(modelData.id)
-                onRemoveClicked: Backend.removeFromPlaylist(root.playlistNameForRemove, modelData.id)
+                onFavoriteClicked: Backend.toggleFavorite(song.id)
+                onAddToPlaylistClicked: addPopup.openFor(song.id)
+                onRemoveClicked: Backend.removeFromPlaylist(root.playlistNameForRemove, song.id)
             }
         }
     }

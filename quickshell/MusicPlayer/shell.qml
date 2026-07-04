@@ -23,12 +23,13 @@ ShellRoot {
         implicitWidth: 960
         implicitHeight: 640
 
-        color: Theme.background
-        // Wires up the previously-unused windowOpacity theme knob.
-        // Whether this actually produces visible transparency depends
-        // on your compositor - most Wayland/X11 compositors with
-        // compositing enabled will honor it, some window managers won't.
-        opacity: Theme.windowOpacity
+        // Wires up the previously-unused windowOpacity theme knob. FloatingWindow
+        // is a window, not an Item, so it has no "opacity" property to assign -
+        // the transparency has to live in the alpha channel of the window's own
+        // background color instead. Whether this actually produces visible
+        // transparency depends on your compositor - most Wayland/X11 compositors
+        // with compositing enabled will honor it, some window managers won't.
+        color: Qt.alpha(Theme.background, Theme.windowOpacity)
 
         // ---- optional theme background image ----
         Image {
@@ -45,12 +46,22 @@ ShellRoot {
             id: focusScope
             anchors.fill: parent
             focus: true
-            // Previously fontFamily was loaded from theme.json but never
-            // applied anywhere, so it silently did nothing. Setting it
-            // here lets every Text element below inherit it (QtQuick
-            // cascades `font` down the item tree to children that don't
-            // set their own family explicitly).
-            font.family: Theme.fontFamily
+            // NOTE: this used to be `font.family: Theme.fontFamily` here,
+            // on the theory that QtQuick cascades `font` down the item
+            // tree the way CSS cascades font-family. It doesn't: `font`
+            // is only a real property on Text/TextInput/TextEdit and on
+            // QtQuick Controls' `Control` (which propagates it to child
+            // *Controls* only, never to plain Text items). FocusScope is
+            // a plain Item, so it has no `font` property at all, which
+            // is exactly the "Cannot assign to non-existent property
+            // "font"" error - assigning to a property that isn't there.
+            //
+            // There's no shortcut around this in QtQuick: to actually
+            // honor Theme.fontFamily, every Text/TextInput/TextField in
+            // the app now sets `font.family: Theme.fontFamily` itself
+            // (see Sidebar.qml, NavItem.qml, IconButton.qml, SongRow.qml,
+            // SongList.qml, PlayerBar.qml, PlaylistDetailPage.qml, and
+            // AddToPlaylistPopup.qml).
 
             // ---- global keybinds (see modules/Keybinds.qml) ----
             Keys.onPressed: (event) => {
@@ -155,6 +166,7 @@ ShellRoot {
                     id: toastText
                     anchors.centerIn: parent
                     color: Theme.background
+                    font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSizeSmall
                     font.bold: true
                 }

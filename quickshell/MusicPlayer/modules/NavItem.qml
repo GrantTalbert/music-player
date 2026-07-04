@@ -34,12 +34,14 @@ Rectangle {
         Text {
             text: item.glyph
             color: item.active ? Theme.accent : Theme.textMuted
+            font.family: Theme.fontFamily
             font.pixelSize: Theme.fontSizeNormal
             Layout.preferredWidth: 16
         }
         Text {
             text: item.label
             color: item.active ? Theme.accent : Theme.text
+            font.family: Theme.fontFamily
             font.pixelSize: Theme.fontSizeNormal
             font.bold: item.active
             elide: Text.ElideRight
