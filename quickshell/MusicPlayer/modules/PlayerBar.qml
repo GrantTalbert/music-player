@@ -24,7 +24,8 @@ Rectangle {
 
         // ---- art + title/artist ----
         Rectangle {
-            Layout.preferredWidth: 56
+            visible: Theme.showArtwork
+            Layout.preferredWidth: Theme.showArtwork ? 56 : 0
             Layout.preferredHeight: 56
             radius: 10
             color: Theme.surfaceAlt

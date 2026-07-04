@@ -47,6 +47,15 @@ Singleton {
     property real spacing: 10
     property real padding: 16
 
+    // ---- structural knobs, not just colors/sizes ----
+    // Whether song rows / the now-playing bar show album art thumbnails
+    // at all (rather than just recoloring the placeholder). Turning
+    // this off removes the art slot from the layout entirely.
+    property bool showArtwork: true
+    // Shrinks each song row and drops the artist line, for a denser
+    // list. This is a real layout change, not a palette swap.
+    property bool compactRows: false
+
     // Text shown top-left in the sidebar. Configurable so you don't
     // have to fork the QML just to rename the app.
     property string appName: "Quickshell Music"
@@ -98,6 +107,9 @@ Singleton {
 
         if (t.spacing !== undefined) root.spacing = t.spacing
         if (t.padding !== undefined) root.padding = t.padding
+
+        if (t.showArtwork !== undefined) root.showArtwork = t.showArtwork
+        if (t.compactRows !== undefined) root.compactRows = t.compactRows
 
         if (t.appName !== undefined) root.appName = t.appName
     }

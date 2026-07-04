@@ -159,7 +159,20 @@ Singleton {
             return
         }
         let obj = extra ? Object.assign({}, extra) : {}
-        obj.id = root._nextId++
+        // NOTE: this used to be `obj.id = root._nextId++`, which
+        // clobbered any "id" field already present in `extra`.
+        // toggleFavorite, addToPlaylist, and removeFromPlaylist all
+        // pass a *song* id as `{id: ...}` -- so the song id was getting
+        // silently overwritten with this request counter before the
+        // message ever left the client, and the daemon (which also
+        // used "id" for request/response correlation) had no way to
+        // tell the difference. That's why favoriting looked like it
+        // did nothing, and why adding to a playlist failed with
+        // "unknown song id". The correlation id now lives under its
+        // own key, "req_id" (matching the renamed field in
+        // daemon/ipc_server.py), so it can never collide with a
+        // command's own payload fields again.
+        obj.req_id = root._nextId++
         obj.cmd = cmd
         sock.write(JSON.stringify(obj) + "\n")
     }

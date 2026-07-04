@@ -8,6 +8,14 @@ Item {
     property string playlistName: ""
     signal deleted()
 
+    // Forwarded to the inner SongList so the global "focus_search"
+    // keybind can reach it (see shell.qml) - this page wraps SongList
+    // instead of being one, so without this the keybind had nothing to
+    // call when a playlist page was the visible one.
+    function focusSearch() {
+        songList.focusSearch()
+    }
+
     readonly property var playlistData: {
         for (const p of Backend.playlists) if (p.name === root.playlistName) return p
         return null
@@ -43,6 +51,7 @@ Item {
         }
 
         SongList {
+            id: songList
             Layout.fillWidth: true
             Layout.fillHeight: true
             title: root.playlistName

@@ -5,12 +5,12 @@ unix socket, so the Quickshell (QML) GUI can talk to this daemon.
 Protocol
 --------
 Client -> daemon (one JSON object per line):
-    {"id": 1, "cmd": "play_pause"}
-    {"id": 2, "cmd": "seek", "position": 42.5}
+    {"req_id": 1, "cmd": "play_pause"}
+    {"req_id": 2, "cmd": "seek", "position": 42.5}
 
 Daemon -> client, in response to a request:
-    {"id": 1, "ok": true, "result": {...}}
-    {"id": 1, "ok": false, "error": "message"}
+    {"req_id": 1, "ok": true, "result": {...}}
+    {"req_id": 1, "ok": false, "error": "message"}
 
 Daemon -> client, unsolicited (pushed to every connected client):
     {"event": "snapshot", "data": {...}}   # sent right after connect
@@ -19,6 +19,14 @@ Daemon -> client, unsolicited (pushed to every connected client):
     {"event": "library", "data": {...}}
     {"event": "playlists", "data": {...}}
     {"event": "favorites", "data": {...}}
+
+NOTE: the request/response correlation field used to be named "id",
+which collided with commands that legitimately have their own "id"
+field in the payload (toggle_favorite, add_to_playlist,
+remove_from_playlist all take a *song* id called "id"). The client
+was overwriting the song id with the correlation counter before
+sending, which silently broke those commands. The correlation field
+is now "req_id" so it can never collide with a command's own fields.
 """
 from __future__ import annotations
 
@@ -91,20 +99,20 @@ class ClientHandler(socketserver.StreamRequestHandler):
             server.broadcaster.unregister(self)
 
     def _dispatch(self, server: "IpcServer", msg: dict):
-        req_id = msg.get("id")
+        req_id = msg.get("req_id")
         cmd = msg.get("cmd")
         handler = server.handlers.get(cmd)
         if handler is None:
-            self.send_raw(json.dumps({"id": req_id, "ok": False,
+            self.send_raw(json.dumps({"req_id": req_id, "ok": False,
                                        "error": f"unknown command: {cmd}"}) + "\n")
             return
         try:
             result = handler(msg)
-            self.send_raw(json.dumps({"id": req_id, "ok": True, "result": result},
+            self.send_raw(json.dumps({"req_id": req_id, "ok": True, "result": result},
                                       ensure_ascii=False) + "\n")
         except Exception as e:
             log.exception("Command %s failed", cmd)
-            self.send_raw(json.dumps({"id": req_id, "ok": False, "error": str(e)}) + "\n")
+            self.send_raw(json.dumps({"req_id": req_id, "ok": False, "error": str(e)}) + "\n")
 
 
 class IpcServer(socketserver.ThreadingMixIn, socketserver.UnixStreamServer):

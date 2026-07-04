@@ -65,7 +65,26 @@ class Player:
 
         self._mpv.observe_property("time-pos", self._on_time_pos)
         self._mpv.observe_property("pause", self._on_pause_change)
-        self._mpv.event_callback("end-file")(self._on_end_file)
+        # NOTE: this used to be
+        #   self._mpv.event_callback("end-file")(self._on_end_file)
+        # with a handler that tried to read
+        # `event.get("event", {}).get("reason") == "eof"`. python-mpv's
+        # event_callback hands you the raw MpvEvent object, not a plain
+        # dict shaped like that, so `isinstance(event, dict)` was
+        # always False and the auto-advance branch never ran at all --
+        # a track would hit the end, mpv would just sit there idle, and
+        # nothing in this class ever found out. That's the single root
+        # cause behind: the app freezing at 0:00 while MPRIS/your bar
+        # still thought the old track was playing (past its duration),
+        # pressing Play doing nothing once a track ended, having to
+        # click the song row to "replay" it, and the next track never
+        # auto-advancing.
+        #
+        # `eof-reached` is the standard, reliable python-mpv idiom for
+        # this: it flips true exactly when mpv naturally reaches the
+        # end of the current file (not on manual stop()/seek()), and
+        # back to false as soon as a new file is loaded.
+        self._mpv.observe_property("eof-reached", self._on_eof_reached)
 
         self._last_position_emit = 0.0
 
@@ -97,14 +116,12 @@ class Player:
             self._paused = bool(value)
         self._notify("pause")
 
-    def _on_end_file(self, event):
-        try:
-            reason = event.get("event", {}).get("reason") if isinstance(event, dict) else None
-        except Exception:
-            reason = None
-        # "eof" = natural end of track -> advance. anything else (user
-        # initiated stop/switch) is handled by whoever called it.
-        if reason == "eof":
+    def _on_eof_reached(self, name, value):
+        # `value` is True exactly once, when the current file finishes
+        # playing on its own. Advance (or replay/stop, depending on
+        # repeat mode) through the same _advance() path used by the
+        # natural-end-of-track case everywhere else.
+        if value:
             with self.lock:
                 self._advance(auto=True)
 

@@ -32,12 +32,23 @@ Rectangle {
     // TapHandler evaluates.
     property bool suppressClick: false
 
-    height: 56
+    height: Theme.compactRows ? 40 : 56
     radius: Theme.cornerRadius * 0.5
-    // Same transparent-animation artifact as IconButton/NavItem - see
-    // notes there. Fixed the same way here.
-    color: hover.hovered ? Theme.surfaceAlt
-         : (isCurrent ? Qt.alpha(Theme.accent, 0.12) : Qt.alpha(Theme.surfaceAlt, 0))
+    // Previously, a currently-playing row jumped straight from its
+    // accent tint (Qt.alpha(Theme.accent, 0.12)) to the *opaque*
+    // Theme.surfaceAlt on hover - two colors with completely different
+    // RGB, animated together via ColorAnimation. Interpolating RGB and
+    // alpha at the same time produces a visible dark/hue "flash"
+    // partway through (same class of bug already fixed in IconButton -
+    // see the note there), and it only happened for the current track
+    // because non-current rows only ever animate between two alphas of
+    // the *same* base color (Theme.surfaceAlt). The fix is the same:
+    // keep the base color constant and only animate alpha, by hovering
+    // to a brighter alpha of Theme.accent instead of jumping to an
+    // unrelated color.
+    color: row.isCurrent
+           ? Qt.alpha(Theme.accent, hover.hovered ? 0.20 : 0.12)
+           : (hover.hovered ? Theme.surfaceAlt : Qt.alpha(Theme.surfaceAlt, 0))
 
     Behavior on color { ColorAnimation { duration: Theme.anim(120); easing.type: Theme.easingType() } }
 
@@ -60,7 +71,8 @@ Rectangle {
 
         // art thumbnail
         Rectangle {
-            Layout.preferredWidth: 40
+            visible: Theme.showArtwork
+            Layout.preferredWidth: Theme.showArtwork ? 40 : 0
             Layout.preferredHeight: 40
             radius: 8
             color: Theme.surfaceAlt
@@ -96,6 +108,7 @@ Rectangle {
                 elide: Text.ElideRight
             }
             Text {
+                visible: !Theme.compactRows
                 width: parent.width
                 text: row.song.artist || ""
                 color: Theme.textMuted

@@ -11,6 +11,20 @@
 // FloatingWindow, check `quickshell --help` / the Quickshell docs for
 // the equivalent in your version (older/newer releases have shuffled
 // this API around) and swap it in here.
+//
+// SINGLE-INSTANCE / drun launch behaviour
+// ----------------------------------------
+// Previously the .desktop launcher ran `quickshell -c MusicPlayer`
+// directly. Every launch from drun started a brand-new quickshell
+// process, and none of them ever exited - `-n`/`--no-duplicate` just
+// refuses to start a second one with an error, it doesn't bring the
+// first one forward or let you "close" it and relaunch cleanly. The
+// actual fix is to keep a single quickshell process running in the
+// background and use Quickshell's own IPC mechanism (separate from
+// musicplayerd's socket) to show/hide *its* window instead of ever
+// spawning a second process. See the IpcHandler below and
+// bin/quickshell-musicplayer-toggle.sh, which is what the .desktop
+// entry now calls instead of `quickshell -c MusicPlayer` directly.
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -30,6 +44,30 @@ ShellRoot {
         // transparency depends on your compositor - most Wayland/X11 compositors
         // with compositing enabled will honor it, some window managers won't.
         color: Qt.alpha(Theme.background, Theme.windowOpacity)
+
+        // Closing the window (the WM's X button, Alt+F4, etc.) used to
+        // quit the whole quickshell process outright, which is the
+        // opposite of what you want for a single persistent instance
+        // that the .desktop launcher toggles the visibility of. Now it
+        // just hides the window; the process (and its connection to
+        // musicplayerd) stays alive so re-opening from drun is instant
+        // and the daemon-duplication problem above can't happen.
+        onClosing: (close) => {
+            close.accepted = false
+            window.visible = false
+        }
+
+        // External show/hide/toggle control, called like:
+        //   quickshell -c MusicPlayer ipc call window toggle
+        // This is what lets a single already-running instance respond
+        // to being "launched" again from a drun menu instead of a new
+        // process spawning.
+        IpcHandler {
+            target: "window"
+            function toggle(): void { window.visible = !window.visible }
+            function show(): void { window.visible = true }
+            function hide(): void { window.visible = false }
+        }
 
         // ---- optional theme background image ----
         Image {
@@ -81,7 +119,21 @@ ShellRoot {
                     case "toggle_favorite":
                         if (Backend.currentTrack) Backend.toggleFavorite(Backend.currentTrack.id)
                         break
-                    // "focus_search" is left to each page's own search field
+                    case "focus_search": {
+                        // Forward to whichever page is actually visible.
+                        // Each page exposes its own focusSearch() (see
+                        // SongList.qml) - this was never actually called
+                        // from anywhere, which is why the keybind quietly
+                        // did nothing no matter how it was bound.
+                        if (sidebar.selected === "library") {
+                            libraryPage.focusSearch()
+                        } else if (sidebar.selected === "favorites") {
+                            favoritesPage.focusSearch()
+                        } else if (sidebar.selected.indexOf("playlist:") === 0) {
+                            playlistDetailPage.focusSearch()
+                        }
+                        break
+                    }
                 }
             }
 
@@ -106,14 +158,17 @@ ShellRoot {
                         Layout.fillHeight: true
 
                         LibraryPage {
+                            id: libraryPage
                             anchors.fill: parent
                             visible: sidebar.selected === "library"
                         }
                         FavoritesPage {
+                            id: favoritesPage
                             anchors.fill: parent
                             visible: sidebar.selected === "favorites"
                         }
                         PlaylistDetailPage {
+                            id: playlistDetailPage
                             anchors.fill: parent
                             visible: sidebar.selected.indexOf("playlist:") === 0
                             playlistName: sidebar.selected.indexOf("playlist:") === 0 ? sidebar.selected.slice("playlist:".length) : ""
