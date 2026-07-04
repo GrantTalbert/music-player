@@ -1,0 +1,11 @@
+# Install with: pip install --break-system-packages -r requirements.txt
+# (or use a virtualenv - see README.md)
+#
+# NOT listed here: dbus-python and PyGObject. Those bind against system
+# D-Bus/GLib libraries and should be installed via your distro's package
+# manager instead of pip (e.g. on Arch: `pacman -S python-dbus python-gobject`).
+# mpv itself (the media engine / libmpv.so) also needs to be installed via
+# your package manager, e.g. `pacman -S mpv`.
+
+mutagen>=1.47
+python-mpv>=1.0.5
