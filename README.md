@@ -149,40 +149,5 @@ the daemon and the GUI):
 
 ## Errors I have found
 
-1. When clicking on the Play button, the music plays, but the Play button doesn't change to a pause button. Clicking Play again restarts the music, instead of pausing it. Very strange behavior.
-2. When music is playing, although the time is accurately reflected in the WINDOW, my bar (which uses MPRIS) disagrees, and thinks that the music is paused at 0:00. However hitting the Play button on my bar
-    - keeps my bar's and my window's buttons as Play buttons, and
-    - restarts the music from the start
-3. I added one song. The art, name, and author show up perfectly fine in the bottom playbar, but the element in the SongList (i think thats what its called; the list of songs in the main menu) has essentially no data:
-    - It has a little music icon on the left, and on the right a black question mark and a white + button, and nothing else
-    - the hover animation is a tad odd: it starts by highlighting in a darker color, then removes that and highlights a slightly larger area with more rounded corners in a lighter color
-    - the same effect happens for the '?' and '+' on the right side, and the colors are the SAME, meaning that i can't see any highlight when im hovering them (except for like .2 seconds when i first hover where it goes darker for some reason)
-4. Lots of errors thrown in the console when I do many actions, such as hitting Play, clicking on the song in the main menu, clicking on its +, or its ?, favoriting, or even hitting many keybinds: `WARN scene: @modules/SongList.qml[106:-1]: ReferenceError: modelData is not defined`
-5. theres a few other errors, but iforget what threw them:
-```
- quickshell -c MusicPlayer
-  INFO: Launching config: "/home/hyperion/.config/quickshell/MusicPlayer/shell.qml"
-  INFO: Shell ID: "98274392542cbc95048a26d3ba727b53" Path ID "98274392542cbc95048a26d3ba727b53"
-  INFO: Saving logs to "/run/user/1000/quickshell/by-id/nt31bjlmht/log.qslog"
-  INFO: Configuration Loaded
-  WARN scene: @modules/SongRow.qml[45:-1]: TypeError: Cannot read property 'art_url' of undefined
-  WARN scene: @modules/SongRow.qml[42:-1]: TypeError: Cannot read property 'art_url' of undefined
-  WARN scene: @modules/SongRow.qml[49:-1]: TypeError: Cannot read property 'art_url' of undefined
-  WARN scene: @modules/SongRow.qml[61:-1]: TypeError: Cannot read property 'title' of undefined
-  WARN scene: @modules/SongRow.qml[69:-1]: TypeError: Cannot read property 'artist' of undefined
-  WARN scene: @modules/SongRow.qml[77:-1]: TypeError: Cannot read property 'duration' of undefined
-  WARN scene: @modules/SongRow.qml[86:-1]: TypeError: Cannot read property 'id' of undefined
-  WARN scene: @modules/SongRow.qml[85:-1]: TypeError: Cannot read property 'id' of undefined
-  WARN scene: @modules/SongList.qml[106:-1]: ReferenceError: modelData is not defined
-  WARN scene: @modules/SongList.qml[105:-1]: ReferenceError: modelData is not defined
-  WARN scene: @modules/SongList.qml[114:-1]: ReferenceError: modelData is not defined
-  WARN scene: @modules/SongList.qml[111:-1]: ReferenceError: modelData is not defined
-  WARN qml: Backend: command failed: playlist has no playable songs
-  WARN qml: Backend: command failed: playlist has no playable songs
-  WARN scene: @modules/SongList.qml[115:-1]: ReferenceError: modelData is not defined
-  WARN scene: @modules/SongList.qml[111:-1]: ReferenceError: modelData is not defined
-  WARN scene: @modules/Keybinds.qml[59:-1]: TypeError: Property 'onBindingsChanged' of object Keybinds_QMLTYPE_1(0x7fa67a996880) is not a function
-```
-6. some keybinds just silently fail, like searching
-7. whatever the icon is in the very top right (next to a play button on the right) looks weird, it looks like a right harpoon, and has no discernable purpose
-8. In the menu on the left, the padding on the left side of the menu is greater than that on the right side, and it makes it look a tad odd
+1. every time i open the music player via drun, the app generates a new quickshell daemon which wastes resources since none of the daemons ever actually close. This is because i launch with `Exec=quickshell -c MusicPlayer`.
+2. I just made some changes to the theme and now its throwing ` ERROR:   caused by @shell.qml[53:13]: Cannot assign to non-existent property "font"` but i have no idea why its doing this because not only does my theme have a font, but it should have a fallback for fonts
