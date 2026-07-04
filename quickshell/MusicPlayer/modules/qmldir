@@ -1,0 +1,12 @@
+module qs.modules
+
+singleton Theme 1.0 Theme.qml
+singleton Backend 1.0 Backend.qml
+singleton Keybinds 1.0 Keybinds.qml
+
+IconButton 1.0 IconButton.qml
+NavItem 1.0 NavItem.qml
+PlayerBar 1.0 PlayerBar.qml
+SongRow 1.0 SongRow.qml
+SongList 1.0 SongList.qml
+AddToPlaylistPopup 1.0 AddToPlaylistPopup.qml
