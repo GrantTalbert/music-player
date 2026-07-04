@@ -145,10 +145,7 @@ the daemon and the GUI):
 2. Start (or `systemctl --user enable --now`) `musicplayerd`.
 3. Confirm the socket exists: `ls $XDG_RUNTIME_DIR/quickshell-musicplayer/`.
 4. Place the QML files per the layout above.
-5. Write `shell.qml`, `NavItem.qml`, `modules/qmldir`, and a transport bar
-   component (the functional gaps listed in section 4).
-6. Test manually: `quickshell -c MusicPlayer`.
-7. Once it looks right, add the `.desktop` file + icon so it shows up in drun.
+5. Test manually: `quickshell -c MusicPlayer`.
 
 ## Errors I have found
 
