@@ -14,6 +14,12 @@ Item {
 
     signal playRequested(int index, bool shuffle)  // play `songs` starting at index
 
+    // Called by shell.qml when the "focus_search" keybind fires while
+    // this page is the visible one.
+    function focusSearch() {
+        if (root.showSearch) searchInput.forceActiveFocus()
+    }
+
     property string _filter: ""
     readonly property var _filtered: {
         if (_filter.trim().length === 0) return root.songs
@@ -51,7 +57,10 @@ Item {
             }
 
             IconButton { glyph: "\u25B6"; size: 34; onClicked: root.playRequested(0, false) }
-            IconButton { glyph: "\u21C0"; size: 34; onClicked: root.playRequested(0, true) }
+            // Play-all-shuffled. Was "\u21C0" (a one-barbed harpoon
+            // arrow) which nobody could identify as a shuffle control;
+            // using the standard shuffle glyph instead.
+            IconButton { glyph: "\u{1F500}"; size: 34; onClicked: root.playRequested(0, true) }
         }
 
         Rectangle {
@@ -78,6 +87,11 @@ Item {
                     color: Theme.textMuted
                     font: searchInput.font
                     anchors.verticalCenter: parent.verticalCenter
+                }
+
+                Keys.onEscapePressed: {
+                    searchInput.text = ""
+                    searchInput.focus = false
                 }
             }
         }

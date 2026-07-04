@@ -47,6 +47,10 @@ Singleton {
     property real spacing: 10
     property real padding: 16
 
+    // Text shown top-left in the sidebar. Configurable so you don't
+    // have to fork the QML just to rename the app.
+    property string appName: "Quickshell Music"
+
     // ---- loading ----
     FileView {
         id: file
@@ -94,11 +98,31 @@ Singleton {
 
         if (t.spacing !== undefined) root.spacing = t.spacing
         if (t.padding !== undefined) root.padding = t.padding
+
+        if (t.appName !== undefined) root.appName = t.appName
     }
 
     // Helper for QML animations that respect the animationsEnabled toggle.
     function anim(duration) {
         return root.animationsEnabled ? duration : 0
+    }
+
+    // Maps the human-readable `animationEasing` string from theme.json
+    // to an actual Easing.Type curve. Previously this property was
+    // loaded from JSON but never plugged into any Behavior/Animation,
+    // so changing it in theme.json silently did nothing - every
+    // Behavior now calls this instead of hardcoding a curve.
+    function easingType() {
+        const map = {
+            "Linear": Easing.Linear,
+            "InQuad": Easing.InQuad, "OutQuad": Easing.OutQuad, "InOutQuad": Easing.InOutQuad,
+            "InCubic": Easing.InCubic, "OutCubic": Easing.OutCubic, "InOutCubic": Easing.InOutCubic,
+            "InQuart": Easing.InQuart, "OutQuart": Easing.OutQuart, "InOutQuart": Easing.InOutQuart,
+            "InBack": Easing.InBack, "OutBack": Easing.OutBack, "InOutBack": Easing.InOutBack,
+            "InBounce": Easing.InBounce, "OutBounce": Easing.OutBounce, "InOutBounce": Easing.InOutBounce,
+            "InElastic": Easing.InElastic, "OutElastic": Easing.OutElastic, "InOutElastic": Easing.InOutElastic,
+        }
+        return map[root.animationEasing] !== undefined ? map[root.animationEasing] : Easing.OutCubic
     }
 
     // mm:ss (or h:mm:ss for long files) formatter shared by every view.

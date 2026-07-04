@@ -50,10 +50,21 @@ class Player:
         self._original_order: list[str] = []  # order before shuffling, for un-shuffle
         self._is_stopped = True
 
+        # NOTE: we keep our own cached "paused" flag rather than only
+        # reading self._mpv.pause live. python-mpv property writes are
+        # asynchronous (they just enqueue a command to the mpv core),
+        # so reading the property back immediately after setting it can
+        # observe a stale value and momentarily report the wrong
+        # playing/paused state to the GUI and MPRIS. Setting this flag
+        # ourselves at every write point keeps get_state() consistent
+        # with what we *intended*, while the observe_property callback
+        # keeps it honest against anything mpv changes on its own.
+        self._paused: bool = True
+
         self._listeners: list[Callable[[str], None]] = []
 
         self._mpv.observe_property("time-pos", self._on_time_pos)
-        self._mpv.observe_property("pause", lambda name, val: self._notify("pause"))
+        self._mpv.observe_property("pause", self._on_pause_change)
         self._mpv.event_callback("end-file")(self._on_end_file)
 
         self._last_position_emit = 0.0
@@ -78,6 +89,13 @@ class Player:
         if now - self._last_position_emit > 0.9:
             self._last_position_emit = now
             self._notify("position")
+
+    def _on_pause_change(self, name, value):
+        # Keep our cached flag honest against whatever mpv reports,
+        # including changes we didn't initiate ourselves.
+        if value is not None:
+            self._paused = bool(value)
+        self._notify("pause")
 
     def _on_end_file(self, event):
         try:
@@ -113,10 +131,15 @@ class Player:
                 self.queue = list(ids)
                 self.queue_index = max(0, min(start_index, len(ids) - 1))
 
-            self._is_stopped = False
             self._load_current()
 
     def _load_current(self):
+        """The single choke point for "we are now loading and playing a
+        track". Every caller (play_ids, next/previous, auto-advance,
+        repeat handling) must funnel through here, and this is the only
+        place that needs to clear _is_stopped/_paused -- keeping that
+        invariant in one spot is what prevents the GUI/MPRIS state from
+        drifting out of sync with what mpv is actually doing."""
         if not (0 <= self.queue_index < len(self.queue)):
             return
         sid = self.queue[self.queue_index]
@@ -126,6 +149,8 @@ class Player:
             return
         self._mpv.play(song["path"])
         self._mpv.pause = False
+        self._paused = False
+        self._is_stopped = False
         self._notify("track")
 
     # ------------------------------------------------------------------
@@ -137,11 +162,13 @@ class Player:
                 self._load_current()
             else:
                 self._mpv.pause = False
+                self._paused = False
             self._notify("state")
 
     def pause(self):
         with self.lock:
             self._mpv.pause = True
+            self._paused = True
             self._notify("state")
 
     def play_pause(self):
@@ -149,12 +176,14 @@ class Player:
             if self._is_stopped:
                 self.play()
                 return
-            self._mpv.pause = not bool(self._mpv.pause)
+            self._paused = not self._paused
+            self._mpv.pause = self._paused
             self._notify("state")
 
     def stop(self):
         with self.lock:
             self._is_stopped = True
+            self._paused = True
             try:
                 self._mpv.stop()
             except Exception:
@@ -186,6 +215,7 @@ class Player:
     def _advance(self, auto: bool):
         if not self.queue:
             self._is_stopped = True
+            self._paused = True
             self._notify("state")
             return
 
@@ -210,6 +240,7 @@ class Player:
 
         # end of queue, no repeat
         self._is_stopped = True
+        self._paused = True
         try:
             self._mpv.pause = True
         except Exception:
@@ -301,11 +332,10 @@ class Player:
     def get_state(self) -> dict:
         with self.lock:
             song = self.current_song()
-            playing = False
-            try:
-                playing = (not self._is_stopped) and (not bool(self._mpv.pause))
-            except Exception:
-                pass
+            # Use our own cached flags rather than re-querying mpv's
+            # (asynchronously-updated) properties live -- see the note
+            # on self._paused in __init__.
+            playing = (not self._is_stopped) and (not self._paused)
             return {
                 "playing": playing,
                 "stopped": self._is_stopped,

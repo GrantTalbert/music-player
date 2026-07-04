@@ -1,0 +1,13 @@
+{
+  "play_pause": "space",
+  "next": "right",
+  "previous": "left",
+  "seek_forward": "l",
+  "seek_backward": "h",
+  "volume_up": "up",
+  "volume_down": "down",
+  "toggle_shuffle": "s",
+  "cycle_repeat": "r",
+  "toggle_favorite": "f",
+  "focus_search": "slash"
+}

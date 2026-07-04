@@ -1,0 +1,36 @@
+{
+  "background": "#1a1b26",
+  "surface": "#20222f",
+  "surfaceAlt": "#282a3a",
+  "accent": "#7aa2f7",
+  "accentAlt": "#bb9af7",
+  "text": "#c0caf5",
+  "textMuted": "#565f89",
+  "danger": "#f7768e",
+  "favoriteColor": "#f7768e",
+
+  "cornerRadius": 14,
+  "controlRadius": 999,
+  "windowOpacity": 0.96,
+  "surfaceOpacity": 0.85,
+  "blurRadius": 24,
+
+  "animationsEnabled": true,
+  "animationDuration": 180,
+  "animationEasing": "OutCubic",
+
+  "backgroundImage": "",
+  "backgroundImageOpacity": 0.35,
+  "backgroundImageBlur": true,
+
+  "fontFamily": "sans-serif",
+  "fontSizeSmall": 11,
+  "fontSizeNormal": 13,
+  "fontSizeLarge": 16,
+  "fontSizeHuge": 22,
+
+  "spacing": 10,
+  "padding": 16,
+
+  "appName": "Quickshell Music"
+}

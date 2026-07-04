@@ -37,10 +37,7 @@ Item {
                 glyph: "\u2716"
                 size: 30
                 color: Theme.danger
-                onClicked: {
-                    Backend.deletePlaylist(root.playlistName)
-                    root.deleted()
-                }
+                onClicked: deleteConfirmPopup.open()
             }
             Item { Layout.fillWidth: true }
         }
@@ -85,6 +82,70 @@ Item {
                     Backend.renamePlaylist(root.playlistName, renameField.text.trim())
                     root.playlistName = renameField.text.trim()
                     renamePopup.close()
+                }
+            }
+        }
+    }
+
+    Popup {
+        id: deleteConfirmPopup
+        anchors.centerIn: parent
+        width: 300
+        modal: true
+        focus: true
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        background: Rectangle {
+            color: Theme.surface
+            radius: Theme.cornerRadius * 0.6
+            border.width: 1
+            border.color: Qt.alpha(Theme.text, 0.08)
+        }
+
+        ColumnLayout {
+            width: parent.width
+            spacing: 14
+
+            Text {
+                text: "Delete \u201C" + root.playlistName + "\u201D?"
+                color: Theme.text
+                font.bold: true
+                font.pixelSize: Theme.fontSizeNormal
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+            Text {
+                text: "Are you sure you want to delete this playlist? This can't be undone."
+                color: Theme.textMuted
+                font.pixelSize: Theme.fontSizeSmall
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.topMargin: 4
+                spacing: 8
+                Item { Layout.fillWidth: true }
+
+                Rectangle {
+                    width: 84; height: 32
+                    radius: Theme.controlRadius
+                    color: Theme.surfaceAlt
+                    Text { anchors.centerIn: parent; text: "Cancel"; color: Theme.text; font.pixelSize: Theme.fontSizeSmall }
+                    TapHandler { onTapped: deleteConfirmPopup.close() }
+                }
+                Rectangle {
+                    width: 84; height: 32
+                    radius: Theme.controlRadius
+                    color: Theme.danger
+                    Text { anchors.centerIn: parent; text: "Delete"; color: Theme.background; font.pixelSize: Theme.fontSizeSmall; font.bold: true }
+                    TapHandler {
+                        onTapped: {
+                            deleteConfirmPopup.close()
+                            Backend.deletePlaylist(root.playlistName)
+                            root.deleted()
+                        }
+                    }
                 }
             }
         }

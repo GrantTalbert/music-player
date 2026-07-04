@@ -22,7 +22,7 @@ Rectangle {
         spacing: 4
 
         Text {
-            text: "Quickshell Music"
+            text: Theme.appName
             color: Theme.text
             font.pixelSize: Theme.fontSizeLarge
             font.bold: true
@@ -30,12 +30,19 @@ Rectangle {
         }
 
         NavItem {
+            // NOTE: NavItem has a hardcoded implicitWidth of 200, which
+            // is *wider* than the sidebar's actual content width once
+            // Theme.padding margins are subtracted. Without
+            // Layout.fillWidth it overflowed past the right edge,
+            // making the left padding look bigger than the right.
+            Layout.fillWidth: true
             label: "All Songs"
             glyph: "\u266A"
             active: sidebar.selected === "library"
             onClicked: sidebar.select("library")
         }
         NavItem {
+            Layout.fillWidth: true
             label: "Favorites"
             glyph: "\u2665"
             active: sidebar.selected === "favorites"

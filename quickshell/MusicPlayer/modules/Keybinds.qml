@@ -49,14 +49,17 @@ Singleton {
 
     // reverse lookup built once bindings change: keyName -> action
     property var _byKey: ({})
-    onBindingsChanged: {
+    
+    function _rebuildByKey() {
         let map = {}
         for (const action in bindings) {
             map[String(bindings[action]).toLowerCase()] = action
         }
         root._byKey = map
     }
-    Component.onCompleted: onBindingsChanged()
+
+    onBindingsChanged: root._rebuildByKey()
+    Component.onCompleted: root._rebuildByKey()
 
     function _keyName(event) {
         // Prefer the literal typed character for letter/digit keys so

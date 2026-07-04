@@ -24,6 +24,11 @@ ShellRoot {
         implicitHeight: 640
 
         color: Theme.background
+        // Wires up the previously-unused windowOpacity theme knob.
+        // Whether this actually produces visible transparency depends
+        // on your compositor - most Wayland/X11 compositors with
+        // compositing enabled will honor it, some window managers won't.
+        opacity: Theme.windowOpacity
 
         // ---- optional theme background image ----
         Image {
@@ -40,6 +45,12 @@ ShellRoot {
             id: focusScope
             anchors.fill: parent
             focus: true
+            // Previously fontFamily was loaded from theme.json but never
+            // applied anywhere, so it silently did nothing. Setting it
+            // here lets every Text element below inherit it (QtQuick
+            // cascades `font` down the item tree to children that don't
+            // set their own family explicitly).
+            font.family: Theme.fontFamily
 
             // ---- global keybinds (see modules/Keybinds.qml) ----
             Keys.onPressed: (event) => {
@@ -103,6 +114,52 @@ ShellRoot {
                 PlayerBar {
                     Layout.fillWidth: true
                 }
+            }
+
+            // ---- error toast --------------------------------------------------
+            // Backend.errorReceived was already emitted whenever a command
+            // failed, but nothing was ever connected to it, so failures
+            // (bad IDs, unknown playlists, etc.) only ever showed up as a
+            // console.warn - invisible unless you were watching the
+            // terminal. This surfaces them in the UI instead.
+            Connections {
+                target: Backend
+                function onErrorReceived(message) {
+                    errorToast.text = message
+                    errorToast.show()
+                }
+            }
+
+            Rectangle {
+                id: errorToast
+                property alias text: toastText.text
+                function show() {
+                    opacity = 1
+                    hideTimer.restart()
+                }
+
+                z: 1000
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 110
+                radius: Theme.cornerRadius * 0.6
+                color: Theme.danger
+                opacity: 0
+                visible: opacity > 0
+                width: toastText.implicitWidth + 32
+                height: toastText.implicitHeight + 18
+
+                Behavior on opacity { NumberAnimation { duration: Theme.anim(200); easing.type: Theme.easingType() } }
+
+                Text {
+                    id: toastText
+                    anchors.centerIn: parent
+                    color: Theme.background
+                    font.pixelSize: Theme.fontSizeSmall
+                    font.bold: true
+                }
+
+                Timer { id: hideTimer; interval: 3500; onTriggered: errorToast.opacity = 0 }
             }
         }
     }
