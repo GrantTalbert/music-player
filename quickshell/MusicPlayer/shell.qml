@@ -5,13 +5,11 @@
 // SINGLE-INSTANCE / drun launch behaviour
 // ----------------------------------------
 // The .desktop launcher runs quickshell-musicplayer-toggle.sh, which
-// calls `quickshell -c MusicPlayer ipc call window toggle` and only
+// calls `quickshell -c MusicPlayer ipc call window makeVisible` and only
 // falls back to spawning a brand new quickshell process if that IPC
 // call fails (i.e. no instance is running yet). That means the
 // IpcHandler below has to keep responding correctly for the entire
-// life of the quickshell process, or every close ends up looking like
-// "no instance running" to the toggle script and a second daemon gets
-// spawned right back - the exact bug this was built to avoid.
+// life of the quickshell process.
 //
 // WHY THIS ISN'T JUST "onClosing: close.accepted = false"
 // ----------------------------------------------------------
@@ -19,17 +17,13 @@
 // signal you can veto. Quickshell's window types (FloatingWindow,
 // PanelWindow, ...) do NOT have that - the only related signal is
 // QsWindow.closed(), which is a one-way notification fired *after*
-// the OS has already destroyed the window (titlebar X, Alt+F4, the
-// window manager, etc). There's nothing to accept/reject, so
-// `onClosing` doesn't exist as a property on FloatingWindow at all -
-// hence "Cannot assign to non-existent property "onClosing"".
+// the OS has already destroyed the window. There's nothing to accept/reject.
 //
 // Since the window is already gone by the time we find out about it,
-// the fix is to just rebuild it immediately via a Loader, and to keep
-// the IpcHandler declared *outside* the loaded window (as a sibling)
-// so `toggle`/`show`/`hide` still resolve correctly during the brief
-// moment the window is being recreated, and so it keeps working no
-// matter how the previous window instance went away.
+// the fix is to rebuild it immediately via a Loader when requested, and 
+// to keep the IpcHandler declared *outside* the loaded window (as a sibling)
+// so it keeps working no matter how the previous window instance went away.
+
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -39,26 +33,67 @@ import qs.modules
 ShellRoot {
     id: root
 
+    // Keeps this quickshell process alive after the music player window
+    // is closed. Qt's QGuiApplication quits the ENTIRE process (not just
+    // the window) when its last remaining window closes -
+    // quitOnLastWindowClosed defaults to true, and this app was never
+    // setting it otherwise. FloatingWindow is a real xdg-toplevel, which
+    // is exactly what Hyprland's killactive (and the titlebar X) destroy
+    // - and since it was the only window this process had, destroying it
+    // took the whole daemon down with it, IPC socket and all. 
+    //
+    // A layer-shell surface isn't an xdg-toplevel, so killactive/WM close
+    // keybinds don't target it, and it never gets destroyed - it just
+    // needs to exist for Qt to consider the app as still having a window
+    // open. 1x1, transparent, zero exclusive zone: invisible in practice.
+    PanelWindow {
+        anchors.top: true
+        implicitWidth: 1
+        implicitHeight: 1
+        color: "transparent"
+        exclusiveZone: 0
+    }
+
     Loader {
         id: windowLoader
         active: true
         sourceComponent: windowComponent
+        onLoaded: {
+            // Deferring the visibility toggle until after the object is fully seated
+            // prevents the Wayland compositor from dropping the mapping request.
+            Qt.callLater(() => {
+                if (item) {
+                    item.visible = true;
+                }
+            })
+        }
     }
 
     // External show/hide/toggle control, called like:
-    //   quickshell -c MusicPlayer ipc call window toggle
+    //   quickshell -c MusicPlayer ipc call window makeVisible
     // Lives at the ShellRoot level (not inside the window) so it keeps
     // responding even while windowLoader is rebuilding the window.
     IpcHandler {
         target: "window"
+        
         function toggle(): void {
-            if (!windowLoader.item) windowLoader.active = true
-            windowLoader.item.visible = !windowLoader.item.visible
+            if (windowLoader.active && windowLoader.item && windowLoader.item.visible) {
+                hide()
+            } else {
+                makeVisible()
+            }
         }
-        function show(): void {
-            if (!windowLoader.item) windowLoader.active = true
-            windowLoader.item.visible = true
+        
+        function makeVisible(): void {
+            if (!windowLoader.active) {
+                // Creates the window. onLoaded will safely handle visibility.
+                windowLoader.active = true
+            } else if (windowLoader.item) {
+                // Window exists but is hidden; just reveal it.
+                windowLoader.item.visible = true
+            }
         }
+        
         function hide(): void {
             if (windowLoader.item) windowLoader.item.visible = false
         }
@@ -78,7 +113,10 @@ ShellRoot {
             title: "Quickshell Music Player"
             implicitWidth: 960
             implicitHeight: 640
-            visible: true
+            
+            // Start hidden to prevent QtWayland from trying to map the 
+            // surface at the exact millisecond of instantiation.
+            visible: false
 
             // Wires up the previously-unused windowOpacity theme knob. FloatingWindow
             // is a window, not an Item, so it has no "opacity" property to assign -
@@ -88,28 +126,9 @@ ShellRoot {
             // with compositing enabled will honor it, some window managers won't.
             color: Qt.alpha(Theme.background, Theme.windowOpacity)
 
-            // Fired after the OS has already destroyed this window (titlebar
-            // close button, Alt+F4, a WM close keybind like Hyprland's
-            // killactive, etc - see the big comment at the top of this file
-            // for why there's no way to veto that here).
-            //
-            // This used to immediately recreate the window right back
-            // (`windowLoader.active = false` then `Qt.callLater(() =>
-            // windowLoader.active = true)`), so "closing" would behave like
-            // "hiding" instead of quitting the whole process. That raced
-            // against the compositor still tearing down the old Wayland
-            // surface: the new window came back "visible" as far as QML/the
-            // IpcHandler were concerned, but never actually got mapped on
-            // screen - which is why a subsequent `ipc call window show`
-            // logged success yet nothing appeared.
-            //
-            // Instead, just let it fully close here. windowLoader.item
-            // becomes null and stays that way until the *next* show/toggle
-            // IPC call explicitly recreates it (see the IpcHandler above) -
-            // which is also exactly when you'd actually want it back, i.e.
-            // when you click the app icon again.
+            // Fired after the OS has already destroyed this window.
             onClosed: {
-                windowLoader.active = false
+                windowLoader.active = false;
             }
 
             // ---- optional theme background image ----

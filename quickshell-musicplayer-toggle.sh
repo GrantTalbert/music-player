@@ -1,34 +1,31 @@
 #!/usr/bin/env bash
-# quickshell-musicplayer-toggle.sh (diagnostic build)
+# quickshell-musicplayer-toggle.sh
 #
 # Used as the .desktop launcher's Exec, instead of calling
 # `quickshell -c MusicPlayer` directly.
 #
-# This version logs everything -- including a full environment dump --
-# to /tmp/quickshell-musicplayer.log every time it runs, so we can
-# compare "launched from a terminal" vs "launched from rofi/wofi/
-# fuzzel" and see exactly what's different (this is almost always
-# WAYLAND_DISPLAY / DISPLAY / DBUS_SESSION_BUS_ADDRESS / XDG_RUNTIME_DIR
-# being missing when a launcher spawns things through systemd/dbus
-# activation instead of as a direct child of Hyprland).
+# Behavior (this is intentionally NOT a toggle despite the filename):
+#   * if the GUI is already open -> do nothing
+#   * if the GUI is closed / no instance running -> open it
 #
-# Once we've root-caused it, swap this back for the plain version.
+# This works by calling the `show` IPC action (shell.qml's IpcHandler),
+# which always sets visible = true, rather than `toggle`, which flips
+# whatever the current state is. `show` is idempotent: calling it on an
+# already-visible window is a harmless no-op, and calling it when the
+# window was manually closed (windowLoader.active == false) recreates
+# it and shows it. `toggle` looked like it worked half the time only
+# because it alternates hide/show on every call, regardless of whether
+# you actually wanted to hide it.
+#
+# If no quickshell instance is running at all, the ipc call itself
+# fails (nothing is listening on the IPC bus for this config), and we
+# fall back to spawning a new instance.
 
 LOG=/tmp/quickshell-musicplayer.log
 
 {
     echo "==== $(date) ===="
     echo "invoked as: $0 $*"
-    echo "whoami: $(whoami)"
-    echo "pwd: $(pwd)"
-    echo "---- relevant env ----"
-    for var in WAYLAND_DISPLAY DISPLAY XDG_RUNTIME_DIR DBUS_SESSION_BUS_ADDRESS \
-               HYPRLAND_INSTANCE_SIGNATURE XDG_SESSION_TYPE XDG_CURRENT_DESKTOP PATH; do
-        printf '%s=%s\n' "$var" "${!var}"
-    done
-    echo "---- full env ----"
-    env
-    echo "-----------------------"
 } >> "$LOG" 2>&1
 
 QUICKSHELL_BIN="$(command -v quickshell || true)"
@@ -43,13 +40,11 @@ if [ -z "$QUICKSHELL_BIN" ]; then
     exit 1
 fi
 
-echo "$(date): using quickshell binary at $QUICKSHELL_BIN" >> "$LOG"
-
-if "$QUICKSHELL_BIN" -c MusicPlayer ipc call window toggle >>"$LOG" 2>&1; then
-    echo "$(date): ipc toggle succeeded" >> "$LOG"
+if "$QUICKSHELL_BIN" -c MusicPlayer ipc call window makeVisible >>"$LOG" 2>&1; then
+    echo "$(date): ipc makeVisible succeeded (instance already running, now visible)" >> "$LOG"
     exit 0
 fi
 
-echo "$(date): ipc toggle failed (no instance running, or a real error above) - starting a new one" >> "$LOG"
+echo "$(date): ipc makeVisible failed (no instance running) - starting a new one" >> "$LOG"
 setsid -f "$QUICKSHELL_BIN" -c MusicPlayer >>"$LOG" 2>&1 </dev/null
 echo "$(date): spawned new quickshell instance" >> "$LOG"
