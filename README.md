@@ -146,8 +146,3 @@ the daemon and the GUI):
 3. Confirm the socket exists: `ls $XDG_RUNTIME_DIR/quickshell-musicplayer/`.
 4. Place the QML files per the layout above.
 5. Test manually: `quickshell -c MusicPlayer`.
-
-## Errors I have found
-
-1. every time i open the music player via drun, the app generates a new quickshell daemon which wastes resources since none of the daemons ever actually close. This is because i launch with `Exec=quickshell -c MusicPlayer`.
-2. I just made some changes to the theme and now its throwing ` ERROR:   caused by @shell.qml[53:13]: Cannot assign to non-existent property "font"` but i have no idea why its doing this because not only does my theme have a font, but it should have a fallback for fonts
