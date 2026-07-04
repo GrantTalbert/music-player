@@ -2,11 +2,82 @@
 
 a vibecoded music player build for me
 
-not intended for public use, hence it being a vibecoded project and not something i put actual effort into
+not intended for public use, hence it being a vibecoded project built in like a day, and not something i put actual effort into
 
 please do not download
 
-# Quickshell Music Player — Setup Guide
+built with assistance of Anthropic's *Claude* and Google's *Gemini*
+
+the rest of this README.md is just incase you for some reason decide to download
+
+## info
+
+its an MPRIS music player which means that the information for the current playing song and what not can be accessed pretty easily by things with MPRIS integration. it also has a GUI constructed using Quickshell which is reasonably configureable. there are two user-maintained config files: `keybinds.json` and `theme.json`, both located at `~/.config/quickshell-musicplayer`. The `keybinds.json` file manages keybinds you can set to perform a few actions. The actions themselves should be fairly self-explanatory. Here is an example config
+```json
+{
+  "play_pause": "space",
+  "next": "right",
+  "previous": "left",
+  "seek_forward": "l",
+  "seek_backward": "h",
+  "volume_up": "up",
+  "volume_down": "down",
+  "toggle_shuffle": "s",
+  "cycle_repeat": "r",
+  "toggle_favorite": "f",
+  "focus_search": "slash"
+}
+```
+The `theme.json` file manages a bunch of theme variables, which also should be fairly self-explanatory. Here is an example config. Note that it supports background images; to not pass a background image, just leave `"backgroundImage": ""`. If you want a background image, pass the full path to that background image. The `appName` field controls the text in the top left of the app.
+```json
+{
+  "background": "#1a1b26",
+  "surface": "#20222f",
+  "surfaceAlt": "#282a3a",
+  "accent": "#7aa2f7",
+  "accentAlt": "#bb9af7",
+  "text": "#c0caf5",
+  "textMuted": "#565f89",
+  "danger": "#f7768e",
+  "favoriteColor": "#f7768e",
+
+  "cornerRadius": 14,
+  "controlRadius": 999,
+  "windowOpacity": 0.96,
+  "surfaceOpacity": 0.85,
+  "blurRadius": 24,
+
+  "animationsEnabled": true,
+  "animationDuration": 180,
+  "animationEasing": "OutCubic",
+
+  "backgroundImage": "/path/to/image",
+  "backgroundImageOpacity": 0.35,
+  "backgroundImageBlur": true,
+
+  "fontFamily": "sans-serif",
+  "fontSizeSmall": 11,
+  "fontSizeNormal": 13,
+  "fontSizeLarge": 16,
+  "fontSizeHuge": 22,
+
+  "spacing": 10,
+  "padding": 16,
+
+  "showArtwork": true,
+  "compactRows": false,
+
+  "appName": "Quickshell Music"
+}
+```
+
+## usage
+
+it pulls music files from `~/Music`, but you can override by starting the daemon with `--music-dir`. It can find music files in subfolders thereof. If you add a music file while the app is open, you need to press the refresh button next to where it says "Connected".
+
+you can close the app while music is playing -- it spawns a python-based daemon which manages music playing. If you want to kill the daemon, run 
+
+# setup
 
 This project has two halves that talk to each other over a unix socket:
 
@@ -42,11 +113,8 @@ daemon/
 ### Install dependencies
 
 ```bash
-# system packages (Arch example — adjust for your distro)
-sudo pacman -S mpv python-dbus python-gobject
-
-# python packages
-pip install --break-system-packages -r daemon/requirements.txt
+# this works for arch
+sudo pacman -S mpv python-dbus python-gobject python-mpv python-mutagen
 ```
 
 `python-dbus` / `python-gobject` are optional — if missing, MPRIS support
@@ -59,20 +127,9 @@ python daemon/musicplayerd.py -v
 ```
 
 By default it scans `~/Music` (override with `--music-dir`, or set
-`XDG_MUSIC_DIR`). It opens its control socket at:
+`XDG_MUSIC_DIR`).
 
-```
-$XDG_RUNTIME_DIR/quickshell-musicplayer/ipc.sock
-```
-
-(or `~/.cache/quickshell-musicplayer/run/ipc.sock` if `XDG_RUNTIME_DIR`
-isn't set) — this matches exactly what the GUI's `Backend.qml` looks for,
-so don't change one without the other.
-
-### Keep it running
-
-Nothing currently auto-starts the daemon. Recommended: a systemd
-`--user` unit, e.g. `~/.config/systemd/user/musicplayerd.service`:
+The daemon should auto-start if it is not already running when you try to play music from the app. However, if it fails, you can set a systemd `--user` unit, e.g. `~/.config/systemd/user/musicplayerd.service`:
 
 ```ini
 [Unit]
@@ -85,23 +142,18 @@ Restart=on-failure
 [Install]
 WantedBy=default.target
 ```
+Then run
 
 ```bash
 systemctl --user enable --now musicplayerd.service
 ```
+on startup.
 
 ---
 
 ## 2. Where the QML files go
 
-Quickshell loads a *named* config directory: running `quickshell -c MusicPlayer`
-looks in `~/.config/quickshell/MusicPlayer/`. Inside your shell config,
-`qs` refers to that root, so every file that only does `import qs.modules`
-must physically live under a `modules/` subfolder — that's how `Theme`,
-`Backend`, `Keybinds`, `SongList`, `IconButton`, etc. resolve as bare
-identifiers everywhere else.
-
-**Target layout:**
+Move the `MusicPlayer` folder into `~/.config/quickshell`:
 
 ```
 ~/.config/quickshell/MusicPlayer/
@@ -139,10 +191,25 @@ the daemon and the GUI):
 
 ---
 
-## 4. Launch checklist
+## 4. getting it to open with drun/app menu
 
-1. Install system + pip dependencies for the daemon.
+The app ships with an `icon.svg` and `quickshell-musicplayer-toggle.sh`. The former is the icon for the app that u see when u use drun to open it, so you can change that if you want then place it wherever. The latter is the script used for opening the GUI, so u can put that wherever. Then create a desktop entry
+```
+[Desktop Entry]
+Type=Application
+Name=music player owo
+Comment=a local music player with mpris support
+Exec=/path/to/quickshell-musicplayer-toggle.sh
+Icon=/path/to/icon.svg
+Terminal=false
+Categories=AudioVide;Audio
+```
+Put this in a file `~/.local/share/applications/quickshell-musicplayer.desktop`. now it should open with drun
+
+## 5. Launch checklist
+
+1. Install system dependencies for the daemon.
 2. Start (or `systemctl --user enable --now`) `musicplayerd`.
-3. Confirm the socket exists: `ls $XDG_RUNTIME_DIR/quickshell-musicplayer/`.
-4. Place the QML files per the layout above.
-5. Test manually: `quickshell -c MusicPlayer`.
+3. Place the QML files per the layout above.
+4. Create a desktop entry
+5. run the thing

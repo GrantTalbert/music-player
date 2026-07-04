@@ -21,13 +21,6 @@
 # fails (nothing is listening on the IPC bus for this config), and we
 # fall back to spawning a new instance.
 
-LOG=/tmp/quickshell-musicplayer.log
-
-{
-    echo "==== $(date) ===="
-    echo "invoked as: $0 $*"
-} >> "$LOG" 2>&1
-
 QUICKSHELL_BIN="$(command -v quickshell || true)"
 if [ -z "$QUICKSHELL_BIN" ]; then
     for candidate in "$HOME/.local/bin/quickshell" "$HOME/.cargo/bin/quickshell" "/usr/local/bin/quickshell" "/usr/bin/quickshell"; do
@@ -36,15 +29,11 @@ if [ -z "$QUICKSHELL_BIN" ]; then
 fi
 
 if [ -z "$QUICKSHELL_BIN" ]; then
-    echo "$(date): quickshell binary not found" >> "$LOG"
     exit 1
 fi
 
 if "$QUICKSHELL_BIN" -c MusicPlayer ipc call window makeVisible >>"$LOG" 2>&1; then
-    echo "$(date): ipc makeVisible succeeded (instance already running, now visible)" >> "$LOG"
     exit 0
 fi
 
-echo "$(date): ipc makeVisible failed (no instance running) - starting a new one" >> "$LOG"
 setsid -f "$QUICKSHELL_BIN" -c MusicPlayer >>"$LOG" 2>&1 </dev/null
-echo "$(date): spawned new quickshell instance" >> "$LOG"
