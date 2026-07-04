@@ -33,19 +33,7 @@ import qs.modules
 ShellRoot {
     id: root
 
-    // Keeps this quickshell process alive after the music player window
-    // is closed. Qt's QGuiApplication quits the ENTIRE process (not just
-    // the window) when its last remaining window closes -
-    // quitOnLastWindowClosed defaults to true, and this app was never
-    // setting it otherwise. FloatingWindow is a real xdg-toplevel, which
-    // is exactly what Hyprland's killactive (and the titlebar X) destroy
-    // - and since it was the only window this process had, destroying it
-    // took the whole daemon down with it, IPC socket and all. 
-    //
-    // A layer-shell surface isn't an xdg-toplevel, so killactive/WM close
-    // keybinds don't target it, and it never gets destroyed - it just
-    // needs to exist for Qt to consider the app as still having a window
-    // open. 1x1, transparent, zero exclusive zone: invisible in practice.
+
     PanelWindow {
         anchors.top: true
         implicitWidth: 1

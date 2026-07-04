@@ -38,6 +38,7 @@ class Player:
             ytdl=False,
             input_default_bindings=False,
             input_vo_keyboard=False,
+            keep_open=True
         )
         self._mpv.loop_file = False
 
